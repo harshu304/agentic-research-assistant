@@ -11,3 +11,7 @@ env/
 
 # OS files
 .DS_Store
+ieee_large_dataset.json
+ieee_papers_dataset.json
+non_ieee_papers.json
+ieee_papers.json
