@@ -10,14 +10,12 @@ def load_data(conn, papers):
 
     for paper in tqdm(papers, desc="Inserting papers"):
         try:
-            # Skip bad data
+            # Skip invalid
             if not paper.get("abstract") or not paper.get("title"):
                 continue
 
-            # Create embedding
             embedding = embed_text(paper["abstract"])
 
-            # Insert with deduplication (title + source)
             cursor.execute("""
                 INSERT INTO papers 
                 (paper_id, title, abstract, year, source, pdf_url, authors, embedding)
@@ -35,14 +33,14 @@ def load_data(conn, papers):
                 embedding
             ))
 
-            # Check if inserted or skipped
+            # If inserted → RETURNING id gives value
             if cursor.fetchone():
                 inserted += 1
             else:
                 skipped += 1
 
         except Exception as e:
-            print(f"❌ Error inserting paper: {e}")
+            print(f"❌ Error: {e}")
             conn.rollback()
 
     conn.commit()
@@ -50,5 +48,5 @@ def load_data(conn, papers):
 
     print("\n📊 Summary:")
     print(f"✅ Inserted: {inserted}")
-    print(f"⏭️ Skipped (duplicates): {skipped}")
+    print(f"⏭️ Skipped (already exists): {skipped}")
     print("🎉 Done!")
