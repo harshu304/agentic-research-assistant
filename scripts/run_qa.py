@@ -22,6 +22,7 @@ def main():
     ])
 
     # Step 3: Generate answer using DeepSeek
+    #rag
     answer = generate_answer(query, context)
 
     print("\n🤖 Answer:\n")
