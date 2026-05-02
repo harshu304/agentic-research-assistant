@@ -7,7 +7,7 @@ def search_papers(conn, query, top_k=5):
     query_embedding = embed_text(query)
 
     cursor.execute("""
-        SELECT title, abstract
+        SELECT title, abstract,  pdf_url, authors, year
         FROM papers
         ORDER BY embedding <-> %s::vector
         LIMIT %s;
