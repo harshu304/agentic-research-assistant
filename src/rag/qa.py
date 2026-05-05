@@ -3,39 +3,37 @@ import ollama
 
 def generate_answer(question, context):
     prompt = f"""
-You are an AI research assistant.
-You are a strict RAG assistant.
+You are a STRICT research assistant.
 
-Answer ONLY using the provided context.
-If the answer is NOT present, say:
-"Not found in database."
-
-Also provide the exact sentence used.
-Do NOT use prior knowledge.
-STRICT RULES:
-- Use ONLY the provided context
-- If exact match is not found, return the closest relevant paper
-- Always include Title, Year, and Link
+RULES (MANDATORY):
+- You can ONLY use the provided context
+- DO NOT use any external knowledge
+- DO NOT say "I cannot browse" or similar
+- DO NOT generate new paper titles
+- ONLY use papers listed in context
+- If no answer → say: "No relevant paper found in database"
 
 ---------------------
-Context:
+CONTEXT (ONLY SOURCE OF TRUTH):
 {context}
 ---------------------
 
-Question:
+QUESTION:
 {question}
 
-Answer format:
+OUTPUT FORMAT (STRICT):
 
-Result:
-- Title:
-- Year:
-- Authors:
-- Link:
+Answer:
+- Short explanation
+
+Papers:
+- EXACT Title (Year)
+- EXACT Title (Year)
 """
     response = ollama.chat(
         model="deepseek-llm",
         messages=[{"role": "user", "content": prompt}],
-        options={"temperature": 0.2}
+        options={"temperature": 0.1}
+        
     )
     return response["message"]["content"]
