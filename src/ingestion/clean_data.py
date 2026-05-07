@@ -1,55 +1,71 @@
-import json
+import ijson
 
 
-def clean_data(input_path):
+def clean_data_stream(input_path):
+    total = 0
+    cleaned_count = 0
+
     with open(input_path, "r", encoding="utf-8") as f:
-        raw_data = json.load(f)
+        papers = ijson.items(f, "item")
 
-    cleaned = []
+        for paper in papers:
+            total += 1
 
-    for paper in raw_data:
+            # ---------- ABSTRACT ----------
+            abstract = paper.get("abstract")
+            if not abstract or len(abstract.strip()) < 20:
+                continue
 
-        # ❌ Skip if no abstract or too small
-        abstract = paper.get("abstract")
-        if not abstract or len(abstract.strip()) < 20:
-            continue
+            abstract = abstract.strip()
 
-        # ❌ Skip if no title
-        title = paper.get("title")
-        if not title:
-            continue
+            # 🔥 FULL + TRIMMED VERSION
+            full_abstract = abstract[:2000]   # store (optional limit)
+            embed_text = abstract[:500]      # use for embedding
 
-        # 🔥 SAFE AUTHOR HANDLING
-        authors_data = paper.get("authors", [])
+            # ---------- TITLE ----------
+            title = paper.get("title")
+            if not title:
+                continue
+            title = title.strip()
 
-        if isinstance(authors_data, list):
-            authors = ", ".join([
-                a.get("name", "")
-                for a in authors_data
-                if isinstance(a, dict) and a.get("name")
-            ])
-        elif isinstance(authors_data, str):
-            authors = authors_data
-        else:
-            authors = ""
+            # ---------- AUTHORS ----------
+            authors_data = paper.get("authors", [])
+            if isinstance(authors_data, list):
+                authors = ", ".join(
+                    a.get("name", "")
+                    for a in authors_data
+                    if isinstance(a, dict) and a.get("name")
+                )
+            elif isinstance(authors_data, str):
+                authors = authors_data
+            else:
+                authors = ""
 
-        # 🔥 SAFE PDF URL
-        pdf_data = paper.get("openAccessPdf", {})
-        if isinstance(pdf_data, dict):
-            pdf_url = pdf_data.get("url")
-        else:
-            pdf_url = None
+            # ---------- PDF ----------
+            pdf_data = paper.get("openAccessPdf")
+            pdf_url = pdf_data.get("url") if isinstance(pdf_data, dict) else None
 
-        cleaned.append({
-            "paper_id": paper.get("paperId"),
-            "title": title,
-            "abstract": abstract,
-            "year": paper.get("year"),
-            "source": paper.get("venue"),
-            "pdf_url": pdf_url,
-            "authors": authors
-        })
+            # ---------- YEAR ----------
+            year = paper.get("year")
+            if not isinstance(year, int):
+                year = None
 
-    print(f"✅ Cleaned papers: {len(cleaned)} / {len(raw_data)}")
+            cleaned_count += 1
 
-    return cleaned
+            # ---------- OUTPUT ----------
+            yield {
+                "paper_id": paper.get("paperId"),
+                "title": title,
+                "abstract": full_abstract,   # ✅ full text stored
+                "embed_text": embed_text,    # 🔥 used for embedding
+                "year": year,
+                "source": paper.get("venue"),
+                "pdf_url": pdf_url,
+                "authors": authors
+            }
+
+            # ---------- PROGRESS ----------
+            if total % 100000 == 0:
+                print(f"Processed: {total}")
+
+    print(f"✅ Cleaned papers: {cleaned_count} / {total}")
