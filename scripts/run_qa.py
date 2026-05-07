@@ -15,39 +15,25 @@ def normalize_title(title: str):
 
 
 def extract_titles(answer):
-    """
-    Extract titles robustly from LLM output
-    Handles:
-    - "- Title (Year)"
-    - "- Title"
-    - "- Title - extra text"
-    """
-    lines = answer.split("\n")
+
     titles = []
 
-    for line in lines:
-        line = line.strip()
+    # Match:
+    # - Paper Title (2023)
+    pattern = r"-\s*(.*?)\s*\(\d{4}\)"
 
-        if line.startswith("-"):
-            # remove bullet
-            title = re.sub(r"^-+\s*", "", line)
+    matches = re.findall(pattern, answer)
 
-            # remove year
-            title = re.sub(r"\(\d{4}\)", "", title)
+    for match in matches:
 
-            # remove link if any
-            title = re.sub(r"http\S+", "", title)
+        title = match.strip()
 
-            # take only first part before extra description
-            title = title.split(" - ")[0]
+        # normalize spaces
+        title = re.sub(r"\s+", " ", title)
 
-            title = title.strip()
+        titles.append(title)
 
-            if title:
-                titles.append(title)
-
-    # remove duplicates
-    return list(set(titles))
+    return titles
 
 
 def main():
