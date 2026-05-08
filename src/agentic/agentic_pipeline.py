@@ -46,27 +46,31 @@ def agentic_qa_pipeline(
     # ==========================================
 #     
     prompt = f"""
-    You are an expert AI research assistant.
+    You are a research paper QA assistant.
 
-    Answer the user's question ONLY using the provided research-paper context.
+    Answer ONLY using the provided context.
 
-    IMPORTANT RULES:
-    - Provide detailed technical explanations
-    - Explain the methodology clearly
-    - Mention architectures, algorithms, optimization methods, and training approaches if present
-    - Include fallback mechanisms or evaluation details if mentioned
-    - Do NOT hallucinate
-    - Do NOT invent information
-    - If information is missing, explicitly say:
-    "The paper does not explicitly mention this."
+    Do NOT add assumptions.
+    Do NOT generate extra explanations.
+    Do NOT include unrelated details.
 
-    CONTEXT:
+    If information is missing, say:
+    'The paper does not explicitly mention this.'
+
+    Provide:
+    1. Direct answer
+    2. Key methodology details
+    3. Important supporting points
+
+    ================ CONTEXT ================
+
     {context}
 
-    QUESTION:
+    ================ QUESTION ================
+
     {user_question}
 
-    DETAILED TECHNICAL ANSWER:
+    ================ ANSWER ================
     """
 
     print("\n🧠 GENERATING ANSWER...")
