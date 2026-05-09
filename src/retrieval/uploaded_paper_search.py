@@ -85,20 +85,20 @@ def search_uploaded_paper(
     print(f"\n🎯 PREFERRED SECTIONS: {preferred_sections}")
 
     # ==========================================
-    # SECTION-AWARE RETRIEVAL
+    # VECTOR SEARCH
     # ==========================================
     if preferred_sections:
 
         cursor.execute("""
             SELECT
                 chunk_text,
-                embedding <-> %s::vector AS distance,
+                embedding <-> %s::vector AS score,
                 section
             FROM uploaded_paper_chunks
             WHERE
                 session_id = %s
                 AND section = ANY(%s)
-            ORDER BY distance
+            ORDER BY score
             LIMIT 20;
         """, (
             query_embedding,
@@ -106,34 +106,122 @@ def search_uploaded_paper(
             preferred_sections
         ))
 
-    # ==========================================
-    # FALLBACK NORMAL RETRIEVAL
-    # ==========================================
     else:
 
         cursor.execute("""
             SELECT
                 chunk_text,
-                embedding <-> %s::vector AS distance,
+                embedding <-> %s::vector AS score,
                 section
             FROM uploaded_paper_chunks
             WHERE session_id = %s
-            ORDER BY distance
+            ORDER BY score
             LIMIT 20;
         """, (
             query_embedding,
             session_id
         ))
 
-    results = cursor.fetchall()
+    vector_results = cursor.fetchall()
 
-    print(f"\n📄 RETRIEVED CHUNKS: {len(results)}")
+    print(f"\n📄 VECTOR RESULTS: {len(vector_results)}")
 
+    # ==========================================
+    # BM25 SEARCH
+    # ==========================================
+    if preferred_sections:
+
+        cursor.execute("""
+            SELECT
+                chunk_text,
+                ts_rank(
+                    search_vector,
+                    websearch_to_tsquery('english', %s)
+                ) AS score,
+                section
+            FROM uploaded_paper_chunks
+            WHERE
+                session_id = %s
+                AND section = ANY(%s)
+                AND search_vector @@
+                    websearch_to_tsquery('english', %s)
+            ORDER BY score DESC
+            LIMIT 20;
+        """, (
+            query,
+            session_id,
+            preferred_sections,
+            query
+        ))
+
+    else:
+
+        cursor.execute("""
+            SELECT
+                chunk_text,
+                ts_rank(
+                    search_vector,
+                    websearch_to_tsquery('english', %s)
+                ) AS score,
+                section
+            FROM uploaded_paper_chunks
+            WHERE
+                session_id = %s
+                AND search_vector @@
+                    websearch_to_tsquery('english', %s)
+            ORDER BY score DESC
+            LIMIT 20;
+        """, (
+            query,
+            session_id,
+            query
+        ))
+
+    bm25_results = cursor.fetchall()
+
+    print(f"\n📄 BM25 RESULTS: {len(bm25_results)}")
+
+    # ==========================================
+    # MERGE RESULTS
+    # ==========================================
+    combined_results = (
+        vector_results +
+        bm25_results
+    )
+
+    print(
+        f"\n📄 COMBINED RESULTS: "
+        f"{len(combined_results)}"
+    )
+
+    # ==========================================
+    # REMOVE DUPLICATES
+    # ==========================================
+    unique_results = {}
+
+    for r in combined_results:
+
+        chunk_text = r[0]
+
+        if chunk_text not in unique_results:
+
+            unique_results[chunk_text] = r
+
+    results = list(unique_results.values())
+
+    print(
+        f"\n📄 UNIQUE RESULTS: "
+        f"{len(results)}"
+    )
+
+    # ==========================================
+    # SHOW RETRIEVED CHUNKS
+    # ==========================================
     for r in results[:5]:
 
         print("\n====================")
         print(f"SECTION: {r[2]}")
-        print(f"DISTANCE: {r[1]}")
+        print(f"SCORE: {r[1]}")
         print("====================")
 
         print(r[0][:500])

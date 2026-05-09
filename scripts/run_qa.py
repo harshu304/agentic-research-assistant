@@ -83,17 +83,17 @@ Abstract:
     valid_titles = validate_titles(conn, extracted_titles)
 
     # 🔥 Step 6: Output
-    print("\n📚 Valid References (from DB):\n")
+    # print("\n📚 Valid References (from DB):\n")
 
-    if not valid_titles:
-        print("⚠️ No valid references found")
-        print("👉 Possible reasons:")
-        print("   - LLM format mismatch")
-        print("   - Weak retrieval")
-        print("   - Titles slightly different")
-    else:
-        for t in valid_titles:
-            print("-", t)
+    # if not valid_titles:
+    #     print("⚠️ No valid references found")
+    #     print("👉 Possible reasons:")
+    #     print("   - LLM format mismatch")
+    #     print("   - Weak retrieval")
+    #     print("   - Titles slightly different")
+    # else:
+    #     for t in valid_titles:
+    #         print("-", t)
 
     conn.close()
 

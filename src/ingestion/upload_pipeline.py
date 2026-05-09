@@ -1,10 +1,24 @@
 import uuid
 
-from src.ingestion.extract_pdf import (extract_text_from_pdf)
-from src.ingestion.validate_paper import (is_research_paper)
-from src.ingestion.chunking import (chunk_text)
-from src.ingestion.embed import (embed_batch)
-from src.ingestion.section_parser import (parse_sections)
+from src.ingestion.extract_pdf import (
+    extract_text_from_pdf
+)
+
+from src.ingestion.validate_paper import (
+    is_research_paper
+)
+
+from src.ingestion.chunking import (
+    chunk_text
+)
+
+from src.ingestion.embed import (
+    embed_batch
+)
+
+from src.ingestion.section_parser import (
+    parse_sections
+)
 
 
 # ==========================================
@@ -80,6 +94,8 @@ def upload_research_paper(conn, pdf_path):
 
         chunks = chunk_text(section_text)
 
+        print(f"📦 TOTAL CHUNKS CREATED: {len(chunks)}")
+
         for chunk in chunks:
 
             all_chunks.append({
@@ -123,9 +139,19 @@ def upload_research_paper(conn, pdf_path):
                 page_number,
                 section,
                 chunk_text,
-                embedding
+                embedding,
+                search_vector
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            VALUES (
+                %s,
+                %s,
+                %s,
+                %s,
+                %s,
+                %s,
+                %s,
+                to_tsvector('english', %s)
+            )
         """, (
             session_id,
             pdf_path,
@@ -133,7 +159,8 @@ def upload_research_paper(conn, pdf_path):
             None,
             chunk_data["section"],
             chunk_data["text"],
-            embedding
+            embedding,
+            chunk_data["text"]
         ))
 
     conn.commit()
