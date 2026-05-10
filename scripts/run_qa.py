@@ -4,6 +4,7 @@ from src.rag.qa import generate_answer
 from src.utils.validators import validate_titles
 import re
 
+#Normalize The title
 
 def normalize_title(title: str):
     """Normalize title for better matching"""
